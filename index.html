@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang=ru>
+    <head>
+        <meta charset='utf-8'>
+        <title>G-Expression</title>
+    </head>
+    <style>
+        .container > div {
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .processor, .result, .copyright {
+            width: 500px;
+            text-align: center;
+            border: 1px solid #e9e9e9;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .processor > h4, .processor > h6, .result > h3 {
+            margin: 0;
+            margin-bottom: 0.33rem;
+        }
+        h4 {
+            font-size: 1.75rem;
+        }
+        h6 {
+            font-size: 1.25rem;
+        }
+        /*
+            * Why #666 ask you?
+            * For the glory of Satan, of course
+        */
+        .copyright {
+            color: #666;
+        }
+        .copyright > .line > .col:first-child {
+            text-align: left;
+        }
+        .copyright > .line > .col:last-child {
+            text-align: right;
+        }
+        input, textarea, .textarea {
+            width: calc(100% - 20px);
+            background-color: white;
+            outline: none;
+            border: 1px dotted #999;
+            padding: 10px;
+            border-radius:10px;
+            font-size: 1.3rem;
+            color: black;
+            margin-bottom: 5px;
+            text-align: left;
+            min-height: 1.3rem;
+        }
+        input:focus, textarea:focus, .textarea {
+            background-color: #e9e9e9;
+            border: 1px solid #999;
+            color: white;
+        }
+        .input:disabled {
+            background-color: rgba(255,255,255,0.8) !important;
+        }
+        .line {
+            position: relative;
+            font-size: 1rem;
+        }
+        .line:after { 
+            content: " ";
+            display: block; 
+            height: 0; 
+            clear: both;
+        }
+        .line > .col {
+            float: right;
+            width: calc((100% - 5px) / 2);
+        }
+        .line > .col:first-child {
+            margin-right: 5px;
+            float: left;
+        }
+        .result label {
+            display: block;
+            text-align: left;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+
+        }
+
+        .help-block {
+            color: #a9a9a9;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px dotted greenyellow;
+            font-size: 1.4rem;
+            color: white;
+            background-color: #111;
+        }
+        button:click {
+            color: black;
+        }
+    </style>
+    <body>
+        <div class=container>
+        <div class=processor>
+            <h4>
+                T-Expression Calculator
+            </h4>
+            <h6 class=help-block>
+                For pw.mail.ru (cookie generator). Only for educational usage
+            </h6>
+            <form id=processor>
+                <input type=text id=t-expression>
+                <button id=t-process>Process</button>
+            </form>
+        </div>
+        <div class=result>
+            <h3>
+                Result
+            </h3>
+            <label for=t-result>
+                T-Result
+            </label>
+            <div class=textarea id=t-result></div>
+            <label for=t-time>
+                T-Time
+            </label>
+            <input type=text id=t-time disabled>
+        </div>
+        <div class=copyright>
+            <div class=line>
+                <div class=col>
+                    © Alexander `inferik` Letnikow
+                </div>
+                <div class=col>
+                    2016. Special for <a href=https://horatius.pro alt="Horatius.PRO Outsource">Horatius.PRO</a>
+                </div>
+            </div>
+        </div>
+        </div>
+        <script>
+            var processExpression = function(data)
+            {
+                data = prepareData(data);
+
+                if(!countDifference(data))
+                {
+                    return
+                        "Expression is not valid\nCount of '[' (" 
+                        + diff[0].toString()
+                        + ") symbol must be sabe as count of '] ("
+                        + diff[1].toString()
+                        + ")'\nPlease check it";
+                }
+
+                var oData = data;
+                var iterations = 0;
+                do
+                {
+                    data = 
+                        data
+                            .replace(/\+([ ]*)\+/g,'+')
+                            .replace(/(\[\+)/g, '[')
+                            .replace(/\!\+\[\]/g, '1')
+                            .replace(/\!\[\]/g, '0')
+                            .replace(/(\[[1\+]*[1]{0,1}\])/g, function(matches){
+                                return (matches.match(/[1]/g) || []).length || matches;
+                            }) // Calculate 1 + 1
+                            .replace(/\[[ ]*\]/g,'')
+                            .replace(/[\+]+/g,'+') // ++ to +
+                            .replace(/\[[0-9\+]*\]/g,function(match){
+                                var sum = 0;
+                                var numbers = match.match(/[0-9]+/g) || [];
+                                for(var i=0;i<numbers.length;i++)
+                                {
+                                    sum += numbers[i].toString();
+                                }
+                                return sum;
+                            }); // Calculate [0-9] + [0-9]
+                    console.log(
+                        "Iteration #"
+                        +  (++iterations).toString()
+                        + ' result: ',
+                        data
+                    );
+                    var diffCount = countDifference(data);
+                    if(!diffCount)
+                    {
+                        console.log("Iteration #" + (iterations).toString() + "failed");
+                        break;
+                    } else if(diff[0] == 0)
+                    {
+                        var sum = 0;
+                        var numbers = data.match(/[0-9]+/g) || [];
+                        for(var i=0;i<numbers.length;i++)
+                        {
+                            sum += parseInt(numbers[i]);
+                        }
+                        return sum;
+                    }
+                    
+                } while(parseInt(data).toString() != data.replace(/[0]*/g) && iterations < 10);
+
+                if(data==oData)
+                {
+                    console.log("Nothins wasn't changed");
+                }
+
+                return data;
+            }
+            var diff = [];
+            var countDifference = function(data)
+            {
+                var openTagCount = (data.match(/\[/g) || []).length,
+                    closeTagCount = (data.match(/\]/g) || []).length;
+                diff[0] = openTagCount;
+                diff[1] = closeTagCount;
+
+                return openTagCount == closeTagCount;
+            }
+            var prepareData = function(data)
+            {
+                var changes = 0;
+
+                if(data.substr(0,2)=="t=")
+                {
+                    data = data.substr(2);
+                    changes++;
+                }
+                if(data.substr(-1)==";")
+                {
+                    data = data.substr(0,data.length - 1);
+                    changes++;
+                }
+                if(data.substr(0,1)=="+")
+                {
+                    data = data.substr(1);
+                    changes++;
+                }
+
+                if(changes)
+                {
+                    console.log("Prepared with "+changes.toString()+" changes");
+                }
+
+                return data;
+            }
+            var tResult = document.getElementById('t-result');
+            var tTime = document.getElementById('t-time');
+            document.getElementById('processor').onsubmit = function(e){
+                e.preventDefault();
+                var time = Date.now();
+
+                var expression = document.getElementById('t-expression').value;
+                var result;
+                try {
+                    eval(
+                        "var t="
+                        + expression
+                            .replace('var t=','')
+                            .replace('t=','')
+                            .replace(';','')
+                        + ';'
+                    );
+
+                    result = processExpression(expression);
+                    if(parseInt(result) !== t)
+                    {
+                        console.log("T-Expression: Internal error.\nTry another expression");
+                        throw new Exception();
+                    }
+
+                    console.log("T-Expression processed:\nResult: " + result +"\nTime: " + (Date.now() - time).toString());
+                }
+                catch(Exception)
+                {
+                    result = "T-Expression is invalid. Unable to eval it";
+
+                    console.log("T-Expression is invalid. Unable to eval it");
+                }
+                
+                time = Date.now() - time;
+
+                tResult.innerHTML = result.toString().replace(/\n/g,"<br>");
+                tTime.value = time.toString() + " ms";
+            }
+            </script>
+    </body>
+</html>
